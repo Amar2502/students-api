@@ -13,6 +13,7 @@ import (
 
 	"github.com/amar2502/students-api/internal/config"
 	"github.com/amar2502/students-api/internal/http/handlers/student"
+	"github.com/amar2502/students-api/internal/storage/sqlite"
 )
 
 func main() {
@@ -21,13 +22,21 @@ func main() {
 	cfg := config.MustLoad()
 
 	// database setup
+	storage, er := sqlite.New(cfg)
+	if er != nil {
+		log.Fatal("cannot connect to database: ", er.Error())
+	}
+
+	slog.Info("storage initialized", slog.String("env", cfg.Env))
 
 
 	// setup router
 	router := http.NewServeMux()
 
 
-	router.HandleFunc("POST /api/students", student.New())
+	router.HandleFunc("POST /api/students", student.New(storage))
+	router.HandleFunc("GET /api/students/{id}", student.GetbyId(storage))
+	router.HandleFunc("GET /api/students", student.GetStudent(storage))
 
 
 	// setup server
